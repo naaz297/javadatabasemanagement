@@ -9,7 +9,7 @@ public class Transactiondemo {
     private static final String USER = "root";
     private static final String PASSWORD = "MyNewPass@123";
 
-    public static void main(String[] args) {k
+    public static void main(String[] args) {
 
         Connection conn = null;
 
