@@ -34,9 +34,10 @@ public class JDBCDemo {
                     conn.prepareStatement(insertQuery);
 
             insert.setInt(1, 2);
-            insert.setString(2, "Rahul");
+            insert.setString(2, "Nazrin");
             insert.setInt(3, 22);
             insert.setString(4, "CSE");
+
 
             insert.executeUpdate();
 
