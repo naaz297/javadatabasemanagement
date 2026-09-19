@@ -1,86 +1,102 @@
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.ResultSet;
 
 public class Transactiondemo {
 
-    private static final String URL = "jdbc:mysql://localhost:3306/bank_db";
+    private static final String URL =
+            "jdbc:mysql://127.0.0.1:3306/bank_db";
+
     private static final String USER = "root";
-    private static final String PASSWORD = "MyNewPass@123";
+
+    private static final String PASSWORD =
+            "MyNewPass@123";
 
     public static void main(String[] args) {
 
         Connection conn = null;
 
         try {
-            conn = DriverManager.getConnection(URL, USER, PASSWORD);
 
-            System.out.println("Connected to the Database!");
+            conn = DriverManager.getConnection(
+                    URL, USER, PASSWORD
+            );
 
-            // Transaction start
+            System.out.println("Connected!");
+            System.out.println("Database: " + conn.getCatalog());
+            System.out.println(
+                    "URL: " + conn.getMetaData().getURL()
+            );
+
             conn.setAutoCommit(false);
 
-            // 1. Insert Order
-            String orderSql =
-                    "INSERT INTO my_orders (user_id, customer_name, total_amount) VALUES (?, ?, ?)";
+            String sql =
+                    "INSERT INTO sales_record " +
+                            "(user_id, customer_name, total_amount) " +
+                            "VALUES (?, ?, ?)";
 
-            PreparedStatement orderStmt =
-                    conn.prepareStatement(orderSql);
+            PreparedStatement stmt =
+                    conn.prepareStatement(
+                            sql,
+                            PreparedStatement.RETURN_GENERATED_KEYS
+                    );
 
-            orderStmt.setInt(1, 101);
-            orderStmt.setString(2, "Naaz");
-            orderStmt.setDouble(3, 1500.00);
+            stmt.setInt(1, 101);
+            stmt.setString(2, "Naaz");
+            stmt.setDouble(3, 1500.00);
 
-            orderStmt.executeUpdate();
+            stmt.executeUpdate();
 
-            // 2. Get Order ID
-            int orderId = 1;
+            ResultSet rs = stmt.getGeneratedKeys();
 
-            // 3. Insert Order Item
-            String itemSql =
-                    "INSERT INTO my_order_items " +
-                            "(order_id, product_name, quantity, price) " +
+            int salesId = 0;
+
+            if (rs.next()) {
+                salesId = rs.getInt(1);
+            }
+
+            System.out.println("Sales ID: " + salesId);
+
+            String productSql =
+                    "INSERT INTO sales_product " +
+                            "(sales_id, product_name, quantity, price) " +
                             "VALUES (?, ?, ?, ?)";
 
-            PreparedStatement itemStmt =
-                    conn.prepareStatement(itemSql);
+            PreparedStatement productStmt =
+                    conn.prepareStatement(productSql);
 
-            itemStmt.setInt(1, orderId);
-            itemStmt.setString(2, "Laptop Bag");
-            itemStmt.setInt(3, 2);
-            itemStmt.setDouble(4, 750.00);
+            productStmt.setInt(1, salesId);
+            productStmt.setString(2, "Laptop Bag");
+            productStmt.setInt(3, 2);
+            productStmt.setDouble(4, 750.00);
 
-            itemStmt.executeUpdate();
+            productStmt.executeUpdate();
 
-            // Everything successful
             conn.commit();
 
-            System.out.println("Order inserted successfully!");
-            System.out.println("Order Item inserted successfully!");
+            System.out.println("Transaction Committed!");
 
-        } catch (SQLException e) {
+            stmt.close();
+            productStmt.close();
+            rs.close();
+
+            conn.close();
+
+            System.out.println("Connection Closed!");
+
+        } catch (Exception e) {
 
             try {
                 if (conn != null) {
                     conn.rollback();
-                    System.out.println("Transaction Rollback!");
+                    System.out.println("Rollback!");
                 }
-            } catch (SQLException ex) {
+            } catch (Exception ex) {
                 ex.printStackTrace();
             }
 
             e.printStackTrace();
-
-        } finally {
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
         }
     }
 }
